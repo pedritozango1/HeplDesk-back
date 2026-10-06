@@ -6,6 +6,9 @@
 # dotenv files
 .env
 
+# Ficheiros enviados pelos utilizadores (Storage:RootPath)
+Storage/
+
 # User-specific files
 *.rsuser
 *.suo

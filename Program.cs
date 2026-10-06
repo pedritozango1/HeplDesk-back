@@ -72,9 +72,15 @@ builder.Services.AddSwaggerGen(o =>
     });
 });
 
-builder.Services.AddCors(o => o.AddPolicy("front", p => p
 // 5173 = vite dev · 4173 = vite preview · 5174 = front dos testes E2E (playwright.config.js)
-.WithOrigins("http://localhost:5173", "http://localhost:4173", "http://localhost:5174").
+string[] origensLocais = ["http://localhost:5173", "http://localhost:4173", "http://localhost:5174"];
+// Produção: o endereço do front (Vercel) vem de Cors:Origins, separado por vírgulas se forem vários.
+var origensExtra = (builder.Configuration["Cors:Origins"] ?? "")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .Select(o => o.TrimEnd('/'));
+
+builder.Services.AddCors(o => o.AddPolicy("front", p => p
+.WithOrigins([.. origensLocais, .. origensExtra]).
 AllowAnyHeader().
 AllowAnyMethod().
 AllowCredentials()));   // o cliente SignalR envia credenciais na negociação
@@ -85,7 +91,7 @@ builder.Services.AddSingleton<PresencaTracker>();
 
 
 builder.Services.AddDbContext<AppDbContext>(o =>
-    o.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    o.UseNpgsql(builder.Configuration.GetLigacaoBd()));
 
 builder.Services.AddApplicationServices(builder.Configuration);
 
@@ -128,13 +134,13 @@ builder.Services.AddAuthorizationBuilder()
     .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
 var app = builder.Build();
 
-// Aplicar migrations pendentes e semear dados (só em Development)
+// Aplicar migrations pendentes e semear dados (em Development, ou com Seed:Demo=true)
 using (var scope = app.Services.CreateScope())
 
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
-    if (app.Environment.IsDevelopment())
+    if (app.Configuration.ModoDemo(app.Environment))
     {
         await DbSeeder.SeedAsync(db);
     }
@@ -162,5 +168,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<TempoRealHub>("/hubs/tempo-real");
+// Verificação de saúde para o alojamento (sem token — a política por omissão exige login).
+app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
 
 app.Run();
