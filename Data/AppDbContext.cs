@@ -30,6 +30,7 @@ public class AppDbContext:DbContext
     public DbSet<RelatorioHistorico> RelatorioHistoricos => Set<RelatorioHistorico>();
     public DbSet<ArtigoAvaliacao> ArtigoAvaliacoes => Set<ArtigoAvaliacao>();
     public DbSet<Ficheiro> Ficheiros => Set<Ficheiro>();
+    public DbSet<SessaoRemota> SessoesRemotas => Set<SessaoRemota>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -61,5 +62,7 @@ public class AppDbContext:DbContext
         cb.Properties<TipoHistoricoOrdem>().HaveConversion<string>();
         cb.Properties<StatusRelatorio>().HaveConversion<string>();
         cb.Properties<AcaoRelatorio>().HaveConversion<string>();
+        cb.Properties<EstadoSessaoRemota>().HaveConversion<string>();
+        cb.Properties<ModoAcessoRemoto>().HaveConversion<string>();
     }
 }

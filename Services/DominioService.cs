@@ -76,6 +76,18 @@ public class DominioService(IOptions<DominioSettings> settings) : IDominioServic
         [TipoHistoricoOrdem.REJEITADA] = ("Rejeitada", "red"),
         [TipoHistoricoOrdem.COMENTARIO] = ("Comentário", "gray"),
         [TipoHistoricoOrdem.REATRIBUIDA] = ("Reatribuída", "blue"),
+        [TipoHistoricoOrdem.ACESSO_REMOTO] = ("Acesso remoto", "purple"),
+
+        [EstadoSessaoRemota.PEDIDA] = ("Aguarda autorização", "amber"),
+        [EstadoSessaoRemota.AUTORIZADA] = ("Autorizada", "blue"),
+        [EstadoSessaoRemota.ATIVA] = ("Em curso", "green"),
+        [EstadoSessaoRemota.TERMINADA] = ("Terminada", "gray"),
+        [EstadoSessaoRemota.RECUSADA] = ("Recusada", "red"),
+        [EstadoSessaoRemota.EXPIRADA] = ("Expirada", "gray"),
+        [EstadoSessaoRemota.CANCELADA] = ("Cancelada", "gray"),
+
+        [ModoAcessoRemoto.VER] = ("Ver ecrã", "blue"),
+        [ModoAcessoRemoto.CONTROLAR] = ("Controlar", "purple"),
     };
 
     public DominioDto Obter()
@@ -95,6 +107,8 @@ public class DominioService(IOptions<DominioSettings> settings) : IDominioServic
             [nameof(StatusRelatorio)] = Valores<StatusRelatorio>(),
             [nameof(AcaoRelatorio)] = Valores<AcaoRelatorio>(),
             [nameof(TipoHistoricoOrdem)] = Valores<TipoHistoricoOrdem>(),
+            [nameof(EstadoSessaoRemota)] = Valores<EstadoSessaoRemota>(),
+            [nameof(ModoAcessoRemoto)] = Valores<ModoAcessoRemoto>(),
         };
         return new DominioDto(enums, s.Categorias, s.TiposDispositivo, s.TiposComponente, s.SlaHoras);
     }

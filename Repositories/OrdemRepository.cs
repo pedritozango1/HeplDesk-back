@@ -23,6 +23,9 @@ public class OrdemRepository(AppDbContext ctx) : Repository<OrdemReparo>(ctx), I
     public async Task<OrdemReparo?> GetCompletaAsync(Guid id, CancellationToken ct = default)
         => await ComRelacoes(Set).FirstOrDefaultAsync(o => o.Id == id, ct);
 
+    public async Task<OrdemReparo?> GetComHistoricoPorSolicitacaoAsync(Guid solicitacaoId, CancellationToken ct = default)
+        => await Set.Include(o => o.Historico).FirstOrDefaultAsync(o => o.SolicitacaoId == solicitacaoId, ct);
+
     public async Task<List<OrdemReparo>> GetTodasCompletasAsync(IEnumerable<Guid>? solicitacaoIds = null, CancellationToken ct = default)
     {
         var q = ComRelacoes(Set);

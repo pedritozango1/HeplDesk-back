@@ -37,6 +37,7 @@ public static class RecursosAlterados
         [typeof(RelatorioTecnico)] = "relatoriosTecnicos",
         [typeof(RelatorioHistorico)] = "relatoriosTecnicos",
         [typeof(PecaRelatorio)] = "relatoriosTecnicos",
+        [typeof(SessaoRemota)] = "acessosRemotos",
     };
 
     /// <summary>Recursos afetados pelas entradas pendentes do change tracker (antes do SaveChanges).</summary>

@@ -734,6 +734,87 @@ namespace Novati.API.Data.Migrations
                     b.ToTable("RequisicoesCompra");
                 });
 
+            modelBuilder.Entity("Novati.API.Models.Entities.SessaoRemota", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AgentePc")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("AutorizadaIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("IniciadaEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Modo")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("MotivoFim")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("PedidaEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("RespondidaEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SolicitacaoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SolicitanteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TecnicoId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TentativasFalhadas")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("TerminadaEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("TerminadaPorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("TokenExpiraEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime?>("TokenUsadoEm")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("Versao")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SolicitacaoId")
+                        .IsUnique()
+                        .HasFilter("\"Estado\" IN ('PEDIDA', 'AUTORIZADA', 'ATIVA')");
+
+                    b.HasIndex("SolicitanteId");
+
+                    b.HasIndex("TecnicoId");
+
+                    b.ToTable("SessoesRemotas");
+                });
+
             modelBuilder.Entity("Novati.API.Models.Entities.Solicitacao", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1211,6 +1292,33 @@ namespace Novati.API.Data.Migrations
                     b.Navigation("Ordem");
 
                     b.Navigation("Solicitante");
+                });
+
+            modelBuilder.Entity("Novati.API.Models.Entities.SessaoRemota", b =>
+                {
+                    b.HasOne("Novati.API.Models.Entities.Solicitacao", "Solicitacao")
+                        .WithMany()
+                        .HasForeignKey("SolicitacaoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Novati.API.Models.Entities.User", "Solicitante")
+                        .WithMany()
+                        .HasForeignKey("SolicitanteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Novati.API.Models.Entities.User", "Tecnico")
+                        .WithMany()
+                        .HasForeignKey("TecnicoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Solicitacao");
+
+                    b.Navigation("Solicitante");
+
+                    b.Navigation("Tecnico");
                 });
 
             modelBuilder.Entity("Novati.API.Models.Entities.Solicitacao", b =>

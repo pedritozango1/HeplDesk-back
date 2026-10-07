@@ -1,4 +1,6 @@
+using Novati.API.BackgroundServices;
 using Novati.API.Data;
+using Novati.API.Realtime;
 using Novati.API.Repositories;
 using Novati.API.Repositories.Interfaces;
 using Novati.API.Common.Settings;
@@ -65,6 +67,17 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IFileStorage, LocalFileStorage>();
         services.AddScoped<IFicheiroRepository, FicheiroRepository>();
         services.AddScoped<IFicheiroService, FicheiroService>();
+
+        // ─── Módulo 15: Acesso remoto ───────────────────────
+        services.Configure<AcessoRemotoSettings>(config.GetSection("AcessoRemoto"));
+        services.AddSingleton<ServidoresIceService>();
+        // Agente Novati: os agentes ligados (em memória) e a distribuição do executável.
+        services.AddSingleton<AgentesLigados>();
+        services.Configure<AgenteSettings>(config.GetSection("Agente"));
+        services.AddScoped<IAgenteService, AgenteService>();
+        services.AddScoped<ISessaoRemotaRepository, SessaoRemotaRepository>();
+        services.AddScoped<IAcessoRemotoService, AcessoRemotoService>();
+        services.AddHostedService<ExpiracaoSessoesRemotasService>();
 
         // ─── Domínio (enums, categorias, SLA) ────────────────
         services.Configure<DominioSettings>(config.GetSection("Dominio"));

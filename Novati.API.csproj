@@ -25,4 +25,9 @@
 
      </ItemGroup>
 
+  <!-- O executável do Agente Novati (gerado por ..\agente\publicar.ps1) segue com a API publicada. -->
+  <ItemGroup>
+    <Content Include="Agente\**" CopyToPublishDirectory="PreserveNewest" CopyToOutputDirectory="Never" />
+  </ItemGroup>
+
 </Project>

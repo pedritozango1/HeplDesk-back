@@ -17,6 +17,9 @@ public interface IOrdemRepository : IRepository<OrdemReparo>
     /// <summary>Carrega a ordem com PecasUsadas, Rejeicoes, Historico (e o respetivo Autor) e Solicitacao.</summary>
     Task<OrdemReparo?> GetCompletaAsync(Guid id, CancellationToken ct = default);
 
+    /// <summary>A ordem desta solicitação com o Historico carregado (para lhe acrescentar entradas), ou null.</summary>
+    Task<OrdemReparo?> GetComHistoricoPorSolicitacaoAsync(Guid solicitacaoId, CancellationToken ct = default);
+
     /// <summary>Todas as ordens completas. Quem só pode ver as suas filtra por solicitacaoIds.</summary>
     Task<List<OrdemReparo>> GetTodasCompletasAsync(IEnumerable<Guid>? solicitacaoIds = null, CancellationToken ct = default);
 

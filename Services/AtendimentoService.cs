@@ -25,6 +25,7 @@ public class AtendimentoService(
     IDispositivoRepository dispositivos,
     ICompatibilidadeRepository compatibilidades,
     INotificacaoService notificacaoService,
+    IAcessoRemotoService acessoRemotoService,
     IUnitOfWork uow) : IAtendimentoService
 {
     private static DateOnly Hoje => DateOnly.FromDateTime(DateTime.UtcNow);
@@ -150,6 +151,9 @@ public class AtendimentoService(
         AdicionarHistorico(ordem, TipoHistoricoOrdem.REATRIBUIDA, $"Ordem reatribuída a {novoTecnico.Nome}.", userId);
 
         ordens.Update(ordem);
+
+        // O acesso remoto foi consentido ao técnico anterior: não passa para o novo.
+        await acessoRemotoService.EncerrarEmCursoAsync(ordem.SolicitacaoId, "A ordem foi reatribuída a outro técnico.", userId, ct);
 
         await notificacaoService.CriarAsync(
             novoTecnico.Id,
@@ -361,6 +365,9 @@ public class AtendimentoService(
 
             solicitacao.Estado = EstadoSolicitacao.RESOLVIDA;
             AdicionarHistorico(ordem, TipoHistoricoOrdem.ACEITE, "Solução validada pelo solicitante.", userId);
+
+            // Atendimento concluído: não fica nenhuma sessão remota aberta.
+            await acessoRemotoService.EncerrarEmCursoAsync(solicitacao.Id, "A solicitação foi resolvida.", userId, ct);
 
             await notificacaoService.CriarAsync(
                 ordem.TecnicoId,

@@ -29,4 +29,7 @@ public enum TipoHistoricoOrdem
 
     /// <summary>Ordem reatribuída a outro técnico.</summary>
     REATRIBUIDA,
+
+    /// <summary>Sessão de acesso remoto ao PC do solicitante iniciada ou terminada.</summary>
+    ACESSO_REMOTO,
 }

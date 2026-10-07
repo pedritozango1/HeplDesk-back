@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -86,7 +87,10 @@ AllowAnyMethod().
 AllowCredentials()));   // o cliente SignalR envia credenciais na negociação
 
 // Tempo real (chat, presença, dados alterados) — ver Realtime/TempoRealHub.cs
-builder.Services.AddSignalR();
+builder.Services.AddSignalR()
+    // O agente envia imagens do ecrã (JPEG, em base64 dentro do JSON): o limite normal de 32 KB
+    // por mensagem não chega. Só este hub tem o limite alargado.
+    .AddHubOptions<AgenteHub>(o => o.MaximumReceiveMessageSize = AgenteHub.MaxImagemBytes * 4 / 3 + 4096);
 builder.Services.AddSingleton<PresencaTracker>();
 
 
@@ -132,6 +136,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorizationBuilder()
     .SetFallbackPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());
+
+// ─── Limite de pedidos ──────────────────────────────
+// "resgate": 10 tentativas de resgatar um token por minuto, por utilizador. Soma-se ao
+// contador de códigos errados de cada sessão (AcessoRemotoService).
+builder.Services.AddRateLimiter(o =>
+{
+    o.AddPolicy("resgate", ctx => RateLimitPartition.GetFixedWindowLimiter(
+        ctx.User.FindFirst("sub")?.Value ?? ctx.Connection.RemoteIpAddress?.ToString() ?? "anonimo",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
+
+    // Mesmo formato de erro do resto da API.
+    o.OnRejected = async (ctx, _) => await ExceptionHandlingMiddleware.WriteAsync(
+        ctx.HttpContext, StatusCodes.Status429TooManyRequests,
+        "Demasiados pedidos. Aguarde um momento.", "LIMITE_PEDIDOS");
+});
 var app = builder.Build();
 
 // Aplicar migrations pendentes e semear dados (em Development, ou com Seed:Demo=true)
@@ -165,9 +184,12 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();                                   // depois da autenticação: o limite é por utilizador
 
 app.MapControllers();
 app.MapHub<TempoRealHub>("/hubs/tempo-real");
+app.MapHub<AcessoRemotoHub>("/hubs/acesso-remoto");
+app.MapHub<AgenteHub>("/hubs/agente");                  // Agente Novati (programa no PC do funcionário), sem login
 // Verificação de saúde para o alojamento (sem token — a política por omissão exige login).
 app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
 
