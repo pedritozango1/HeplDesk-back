@@ -8,7 +8,7 @@ namespace Novati.API.Realtime;
 /// Ligação dos Agentes Novati (SignalR, /hubs/agente) — o programa que corre no PC do
 /// solicitante. É anónima: o agente não guarda credenciais. O que lhe dá poder é a
 /// associação a uma sessão, feita pelo solicitante autenticado (ver AgentesLigados).
-/// Agente → servidor:  Registar(nomePc, versao) · Quadro(jpeg, largura, altura) · Terminar()
+/// Agente → servidor:  Registar(nomePc, versao) · Quadro(jpeg, largura, altura) · Som(pcm) · Terminar()
 /// Servidor → agente:  "iniciar" (tecnico) · "parar" (motivo) · "visto" · "refrescar" · "entrada" (json)
 /// </summary>
 [AllowAnonymous]
@@ -19,6 +19,9 @@ public class AgenteHub(
 {
     /// <summary>Tamanho máximo de uma imagem do ecrã. O limite de mensagem do hub (Program.cs) conta com o base64.</summary>
     public const int MaxImagemBytes = 2_500_000;
+
+    /// <summary>Amostras por segundo do som enviado pelo agente (igual a SomDoPc.Taxa no agente).</summary>
+    public const int TaxaSom = 16000;
 
     /// <summary>O agente apresenta-se e recebe o código que vai mostrar no ecrã do PC.</summary>
     public string Registar(string nomePc, string versao)
@@ -41,6 +44,23 @@ public class AgenteHub(
 
         await visores.Clients.Group(AcessoRemotoHub.GrupoSessao(sessaoId))
             .SendAsync("quadro", new { dados = jpeg, largura, altura });
+    }
+
+    /// <summary>
+    /// Um bloco do som que o PC está a tocar (PCM mono, 16 kHz, 16 bits). Como as imagens, só é
+    /// reencaminhado com a sessão ATIVA.
+    /// </summary>
+    public async Task Som(byte[] pcm)
+    {
+        var agente = agentes.PorLigacao(Context.ConnectionId);
+        if (agente is not { Ativo: true, SessaoId: { } sessaoId })
+            return;
+        // Um bloco normal são 100 ms (3200 bytes); meio segundo já é abuso.
+        if (pcm is null || pcm.Length == 0 || pcm.Length > TaxaSom || pcm.Length % 2 != 0)
+            return;
+
+        await visores.Clients.Group(AcessoRemotoHub.GrupoSessao(sessaoId))
+            .SendAsync("som", new { dados = pcm, taxa = TaxaSom });
     }
 
     /// <summary>O solicitante carregou em "Terminar acesso" na janela do agente.</summary>

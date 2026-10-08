@@ -89,6 +89,21 @@ public class DispositivosController(IDispositivoService dispositivoService) : Co
     public async Task<ActionResult<DispositivoDto>> UpdateEstado(Guid id, UpdateEstadoDispositivoRequest request, CancellationToken ct)
         => Ok(await dispositivoService.UpdateEstadoAsync(id, request, ct));
 
+    /// <summary>
+    /// Atribui um dispositivo a um utilizador (ADMIN/TECNICO). <c>responsavelId: null</c> devolve-o
+    /// à sala: passa a ser partilhado e qualquer funcionário pode pedir a sua reparação.
+    /// </summary>
+    /// <response code="200">Dispositivo atualizado.</response>
+    /// <response code="403">Utilizador sem permissão.</response>
+    /// <response code="404">Dispositivo ou utilizador não encontrado.</response>
+    [HttpPatch("{id:guid}/responsavel")]
+    [Authorize(Roles = "ADMIN,TECNICO")]
+    [ProducesResponseType(typeof(DispositivoDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<DispositivoDto>> UpdateResponsavel(Guid id, UpdateResponsavelDispositivoRequest request, CancellationToken ct)
+        => Ok(await dispositivoService.UpdateResponsavelAsync(id, request, ct));
+
     // ─── Instâncias de componente ───────────────────────
 
     /// <summary>Lista todas as instâncias de componente instaladas.</summary>

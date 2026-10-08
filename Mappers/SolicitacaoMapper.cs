@@ -12,7 +12,8 @@ public static class SolicitacaoMapper
         s.Prioridade.ToString(), s.Categoria,
         s.Anexos.Select(a => new AnexoDto(a.FicheiroId, a.Nome, a.Tipo, a.DataUrl)).ToList(),
         s.Avaliacao is null ? null : new AvaliacaoDto(s.Avaliacao.Estrelas, s.Avaliacao.Comentario, s.Avaliacao.Data),
-        s.ResolvidaViaBase
+        s.ResolvidaViaBase,
+        s.CriadoEm
     );
 
     /// <summary>Monta a entidade a partir do request. Prioridade e ficheiros dos anexos já vêm resolvidos pelo Service.</summary>

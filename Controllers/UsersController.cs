@@ -110,6 +110,32 @@ public class UsersController(IUserService userService) : ControllerBase
         return NoContent();
     }
 
+    /// <summary>O utilizador autenticado altera o seu nome e email. O perfil de acesso só o ADMIN muda.</summary>
+    /// <response code="200">Utilizador atualizado.</response>
+    /// <response code="400">Nome vazio ou email inválido.</response>
+    /// <response code="409">Já existe outro utilizador com este email.</response>
+    [HttpPut("me")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<UserDto>> UpdateMe(UpdateMeRequest request, CancellationToken ct)
+        => Ok(await userService.UpdateMeAsync(User.GetUserId(), request, ct));
+
+    /// <summary>
+    /// O utilizador autenticado troca a sua password. A nova tem de ser forte: 8+ caracteres,
+    /// com maiúscula, minúscula, número e símbolo.
+    /// </summary>
+    /// <response code="204">Password alterada.</response>
+    /// <response code="400">Password atual errada, nova password fraca ou igual à atual.</response>
+    [HttpPut("me/password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdatePassword(UpdatePasswordRequest request, CancellationToken ct)
+    {
+        await userService.UpdatePasswordAsync(User.GetUserId(), request, ct);
+        return NoContent();
+    }
+
     /// <summary>Atualiza a assinatura digital do próprio utilizador. <c>dataUrl: null</c> remove a assinatura.</summary>
     /// <response code="200">Utilizador atualizado.</response>
     [HttpPut("me/signature")]

@@ -36,12 +36,16 @@ public class SolicitacoesController(ISolicitacaoService solicitacaoService) : Co
     /// <summary>Cria uma solicitação em estado ABERTA e notifica todos os técnicos.</summary>
     /// <response code="201">Solicitação criada.</response>
     /// <response code="400">Prioridade inválida ou campos obrigatórios em falta.</response>
+    /// <response code="403">O dispositivo está atribuído a outro funcionário (só o próprio, um gestor ou um admin o podem reportar).</response>
+    /// <response code="404">Dispositivo ou anexo não encontrado.</response>
     [HttpPost]
     [ProducesResponseType(typeof(SolicitacaoDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<SolicitacaoDto>> Create(CreateSolicitacaoRequest request, CancellationToken ct)
     {
-        var dto = await solicitacaoService.CreateAsync(User.GetUserId(), request, ct);
+        var dto = await solicitacaoService.CreateAsync(User.GetUserId(), User.GetRoleAsEnum(), request, ct);
         return CreatedAtAction(nameof(Get), new { }, dto);
     }
 

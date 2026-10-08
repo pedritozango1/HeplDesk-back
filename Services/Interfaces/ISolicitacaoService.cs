@@ -12,7 +12,11 @@ public interface ISolicitacaoService
     /// <summary>Versão paginada de <see cref="GetVisiveisAsync"/>, com a mesma regra de visibilidade.</summary>
     Task<PaginaResultado<SolicitacaoDto>> GetPaginaAsync(Guid userId, Role role, PaginacaoQuery paginacao, string? estado, CancellationToken ct = default);
 
-    Task<SolicitacaoDto> CreateAsync(Guid solicitanteId, CreateSolicitacaoRequest request, CancellationToken ct = default);
+    /// <summary>
+    /// Um dispositivo atribuído a alguém só pode ser reportado pelo próprio, por um gestor ou por um admin;
+    /// os dispositivos da sala (sem responsável) podem ser reportados por qualquer utilizador.
+    /// </summary>
+    Task<SolicitacaoDto> CreateAsync(Guid solicitanteId, Role role, CreateSolicitacaoRequest request, CancellationToken ct = default);
     Task<SolicitacaoDto> FecharAsync(Guid id, Guid userId, Role role, CancellationToken ct = default);
     Task<SolicitacaoDto> AvaliarAsync(Guid id, Guid userId, AvaliarSolicitacaoRequest request, CancellationToken ct = default);
     Task<SolicitacaoDto> ResolverViaBaseAsync(Guid id, Guid userId, CancellationToken ct = default);

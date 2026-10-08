@@ -13,6 +13,7 @@ namespace Novati.API.Services;
 public class SolicitacaoService(
     ISolicitacaoRepository solicitacoes,
     IFicheiroRepository ficheiros,
+    IDispositivoRepository dispositivos,
     INotificacaoService notificacaoService,
     IUnitOfWork uow) : ISolicitacaoService
 {
@@ -35,10 +36,29 @@ public class SolicitacaoService(
         return (await solicitacoes.GetPaginaAsync(paginacao, filtroEstado, solicitanteId, ct)).Map(SolicitacaoMapper.ToDto);
     }
 
-    public async Task<SolicitacaoDto> CreateAsync(Guid solicitanteId, CreateSolicitacaoRequest request, CancellationToken ct = default)
+    public async Task<SolicitacaoDto> CreateAsync(Guid solicitanteId, Role role, CreateSolicitacaoRequest request, CancellationToken ct = default)
     {
         if (!Enum.TryParse<Prioridade>(request.Prioridade, out var prioridade))
             throw new BusinessRuleException("Prioridade inválida.");
+
+        // Dispositivo com responsável é pessoal: só o próprio, um gestor ou um admin o reportam.
+        // Sem responsável é da sala (ex.: impressora) — qualquer utilizador pode reportar.
+        Guid? avisarResponsavelId = null;
+        string patrimonio = "";
+        if (request.DispositivoFisicoId is { } dispositivoId)
+        {
+            var dispositivo = await dispositivos.GetByIdAsync(dispositivoId, ct)
+                               ?? throw new NotFoundException("Dispositivo não encontrado.");
+
+            if (dispositivo.ResponsavelId is { } responsavelId && responsavelId != solicitanteId)
+            {
+                if (role is not (Role.ADMIN or Role.GESTOR))
+                    throw new ForbiddenException("Este equipamento está atribuído a outro funcionário. Só ele, um gestor ou um administrador podem pedir a sua reparação.");
+
+                avisarResponsavelId = responsavelId;
+                patrimonio = dispositivo.Patrimonio;
+            }
+        }
 
         // Nome e tipo dos anexos vêm do Ficheiro (detetados pelo servidor), não do request.
         var ids = request.Anexos.Select(a => a.FicheiroId).Distinct().ToList();
@@ -57,6 +77,11 @@ public class SolicitacaoService(
         // Mesma transação: se a notificação falhasse a gravar, a solicitação também não gravava.
         await notificacaoService.NotificarPerfisAsync(
             [Role.TECNICO], $"Nova solicitação: {solicitacao.Titulo}", "/atendimentos", ct);
+
+        // Aberta por um gestor/admin sobre o equipamento de outra pessoa: o dono fica a saber.
+        if (avisarResponsavelId is { } dono)
+            await notificacaoService.CriarAsync(
+                dono, $"Foi aberto um pedido de reparação para o seu equipamento {patrimonio}: {solicitacao.Titulo}", null, ct);
 
         await uow.SaveChangesAsync(ct);
 

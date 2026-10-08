@@ -238,6 +238,13 @@ O RustDesk foi retirado: funcionava sozinho (bastava ditar o ID e a palavra-pass
 - Imagem e entrada passam pelo servidor — não há ligação direta entre os PCs, por isso este modo não precisa de STUN/TURN.
 - O agente só captura e só aplica rato/teclado entre o `iniciar` e o `parar`. Se perder a ligação ao servidor, pára sozinho.
 
+### Som
+
+- **Modo CONTROLAR:** o agente captura o que o PC está a tocar (a saída de som, não o microfone) com a biblioteca NAudio (gratuita) e envia blocos de 100 ms, mono, 16 kHz, 16 bits, por `AgenteHub.Som`. O browser do técnico toca-os com a Web Audio API. Em silêncio não é enviado nada. Qualidade de telefone: chega para avisos, erros e vozes, não para música.
+- **Modo VER:** o browser pede o áudio junto com o ecrã. Só há som se o funcionário escolher o **ecrã inteiro** ou um **separador** e marcar a opção de partilhar o áudio — uma janela isolada não tem som (limite do browser). O painel dos dois lados diz se o som foi incluído.
+- O técnico tem um botão "Som ligado / Som desligado" nos dois modos.
+- Não há conversa por voz (microfone) — para isso continua a usar-se o chat ou o telefone.
+
 ### Três formas de cortar
 
 1. **Terminar acesso** no Novati (qualquer das partes, gestor, admin, tempo máximo, reatribuição) → o `UnitOfWork` liberta o agente e envia-lhe `parar`.

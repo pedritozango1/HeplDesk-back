@@ -13,6 +13,9 @@ public interface IDispositivoService
     Task<DispositivoDto> CreateDispositivoAsync(CreateDispositivoRequest request, CancellationToken ct = default);
     Task<DispositivoDto> UpdateEstadoAsync(Guid id, UpdateEstadoDispositivoRequest request, CancellationToken ct = default);
 
+    /// <summary>Atribui o dispositivo a um utilizador, ou devolve-o à sala (responsável null).</summary>
+    Task<DispositivoDto> UpdateResponsavelAsync(Guid id, UpdateResponsavelDispositivoRequest request, CancellationToken ct = default);
+
     Task<List<InstanciaDto>> GetInstanciasAsync(CancellationToken ct = default);
     Task<InstanciaDto> CreateInstanciaAsync(Guid dispositivoId, CreateInstanciaRequest request, CancellationToken ct = default);
 }

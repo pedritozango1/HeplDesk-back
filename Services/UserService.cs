@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Novati.API.Common;
 using Novati.API.Common.Exceptions;
 using Novati.API.Common.Paginacao;
 using Novati.API.Dtos.Users;
@@ -98,6 +99,50 @@ public class UserService(
         {
             throw new ConflictException("Não é possível remover: o utilizador tem registos associados.");
         }
+    }
+
+    public async Task<UserDto> UpdateMeAsync(Guid userId, UpdateMeRequest request, CancellationToken ct = default)
+    {
+        var user = await users.GetByIdAsync(userId, ct)
+                   ?? throw new NotFoundException("Utilizador não encontrado.");
+
+        var nome = request.Nome.Trim();
+        var email = request.Email.Trim();
+        if (nome.Length == 0)
+            throw new BusinessRuleException("O nome é obrigatório.");
+
+        if (await users.EmailExistsAsync(email, userId, ct))
+            throw new ConflictException("Já existe um utilizador com este email.");
+
+        user.Nome = nome;
+        user.Email = email;
+
+        users.Update(user);
+        await uow.SaveChangesAsync(ct);
+
+        return UserMapper.ToDto(user);
+    }
+
+    public async Task UpdatePasswordAsync(Guid userId, UpdatePasswordRequest request, CancellationToken ct = default)
+    {
+        var user = await users.GetByIdAsync(userId, ct)
+                   ?? throw new NotFoundException("Utilizador não encontrado.");
+
+        // 400 e não 401: a sessão é válida, o que está errado é o campo do formulário.
+        if (!BCrypt.Net.BCrypt.Verify(request.PasswordAtual, user.PasswordHash))
+            throw new BusinessRuleException("A password atual não está correta.", "PASSWORD_ATUAL_ERRADA");
+
+        var falhas = PasswordForte.Falhas(request.NovaPassword);
+        if (falhas.Count > 0)
+            throw new BusinessRuleException($"A nova password é fraca. Falta: {string.Join(", ", falhas)}.", "PASSWORD_FRACA");
+
+        if (request.NovaPassword == request.PasswordAtual)
+            throw new BusinessRuleException("A nova password tem de ser diferente da atual.");
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NovaPassword);
+
+        users.Update(user);
+        await uow.SaveChangesAsync(ct);
     }
 
     public async Task<UserDto> UpdateSignatureAsync(Guid userId, SignatureRequest request, CancellationToken ct = default)

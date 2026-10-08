@@ -13,5 +13,7 @@ public record SolicitacaoDto(
     string Categoria,
     List<AnexoDto> Anexos,
     AvaliacaoDto? Avaliacao,
-    bool ResolvidaViaBase
+    bool ResolvidaViaBase,
+    /// <summary>Instante exato da criação (UTC) — ordena pedidos do mesmo dia.</summary>
+    DateTime CriadoEm
 );

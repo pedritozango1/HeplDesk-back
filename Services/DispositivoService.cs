@@ -16,6 +16,8 @@ public class DispositivoService(
     IModeloDispositivoRepository modelosDispositivo,
     IModeloComponenteRepository modelosComponente,
     ICompatibilidadeRepository compatibilidades,
+    IUserRepository users,
+    INotificacaoService notificacaoService,
     IUnitOfWork uow) : IDispositivoService
 {
     // ─── Localizações ───────────────────────────────────
@@ -56,9 +58,37 @@ public class DispositivoService(
         if (!await localizacoes.ExistsAsync(request.LocalizacaoId, ct))
             throw new NotFoundException("Localização não encontrada.");
 
+        if (request.ResponsavelId is { } responsavelId && !await users.ExistsAsync(responsavelId, ct))
+            throw new NotFoundException("Utilizador responsável não encontrado.");
+
         var dispositivo = DispositivoMapper.ToEntity(request);
 
         await dispositivos.AddAsync(dispositivo, ct);
+        await uow.SaveChangesAsync(ct);
+
+        return DispositivoMapper.ToDto(dispositivo);
+    }
+
+    public async Task<DispositivoDto> UpdateResponsavelAsync(Guid id, UpdateResponsavelDispositivoRequest request, CancellationToken ct = default)
+    {
+        var dispositivo = await dispositivos.GetByIdAsync(id, ct)
+                           ?? throw new NotFoundException("Dispositivo não encontrado.");
+
+        if (request.ResponsavelId is { } responsavelId && !await users.ExistsAsync(responsavelId, ct))
+            throw new NotFoundException("Utilizador responsável não encontrado.");
+
+        // Sem mudança não há nada a gravar nem a notificar.
+        if (dispositivo.ResponsavelId == request.ResponsavelId)
+            return DispositivoMapper.ToDto(dispositivo);
+
+        dispositivo.ResponsavelId = request.ResponsavelId;
+        dispositivos.Update(dispositivo);
+
+        // Mesma transação da atribuição: o novo responsável fica a saber que o equipamento é dele.
+        if (request.ResponsavelId is { } novoResponsavel)
+            await notificacaoService.CriarAsync(
+                novoResponsavel, $"Foi-lhe atribuído o equipamento {dispositivo.Patrimonio}.", "/solicitacoes", ct);
+
         await uow.SaveChangesAsync(ct);
 
         return DispositivoMapper.ToDto(dispositivo);

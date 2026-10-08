@@ -14,6 +14,7 @@ namespace Novati.API.Realtime;
 ///   Sinal(tipo, dados) → "sinal" ({ tipo, dados, de }) no outro participante
 /// Modo CONTROLAR (Agente Novati no PC do solicitante) — retransmissão:
 ///   "quadro" ({ dados, largura, altura }) — imagem do ecrã vinda do agente (AgenteHub)
+///   "som" ({ dados, taxa })               — som do PC, PCM mono de 16 bits
 ///   QuadroVisto()   — o técnico confirma a imagem; o agente só então envia a seguinte
 ///   Entrada(dados)  — rato/teclado do técnico, reencaminhado para o agente
 ///
